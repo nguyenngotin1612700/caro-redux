@@ -4,52 +4,51 @@ import React from 'react';
 import Board from './Board';
 
 class Game extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      history: [
-        {
-          squares: Array(400).fill(null),
-          type: null,
-          pos: -1
-        }
-      ],
-      stepNumber: 0,
-      xIsNext: true,
-      winner: null,
-      wasWin: null,
-      sortMovesAsc: true,
-      moveChoose: -1
-    };
-  }
-
   handlePlayAgain = () => {
-    this.setState({
-      history: [
-        {
-          squares: Array(400).fill(null),
-          type: null,
-          pos: -1
-        }
-      ],
-      stepNumber: 0,
-      xIsNext: true,
-      winner: null,
-      wasWin: null,
-      moveChoose: -1
-    });
+    const {
+      changeAllHistory,
+      changeStepNumber,
+      addWin,
+      addWasWin,
+      setSortMoveAsc,
+      chooseMove,
+      setXIsNext
+    } = this.props;
+    changeAllHistory([
+      {
+        squares: Array(400).fill(null),
+        type: null,
+        pos: -1
+      }
+    ]);
+    changeStepNumber(0);
+    addWin(null);
+    addWasWin(null);
+    setSortMoveAsc();
+    chooseMove(-1);
+    setXIsNext(true);
   };
 
   handleSortMove = () => {
-    const { sortMovesAsc } = this.state;
-    this.setState({
-      sortMovesAsc: !sortMovesAsc
-    });
+    const { toggleSortMove } = this.props;
+    toggleSortMove();
   };
 
   handleClick(i) {
-    const { winner, xIsNext, stepNumber } = this.state;
-    let { history } = this.state;
+    const {
+      winner,
+      xIsNext,
+      stepNumber,
+      changeAllHistory,
+      addCheck,
+      changeStepNumber,
+      chooseMove,
+      addWin,
+      addWasWin,
+      toggleXIsNext
+    } = this.props;
+    let { history } = this.props;
+    const initLength = history.length;
     history = history.slice(0, stepNumber + 1);
     const current = history[history.length - 1];
     const squares = current.squares.slice();
@@ -58,45 +57,35 @@ class Game extends React.Component {
     }
     squares[i] = xIsNext ? 'X' : 'O';
     const checkWin = this.calculateWinner(squares, i);
-    if (checkWin) {
-      this.setState({
-        history: history.concat([
-          {
-            squares,
-            type: squares[i],
-            pos: i
-          }
-        ]),
-        stepNumber: history.length,
-        winner: checkWin,
-        wasWin: checkWin,
-        moveChoose: -1
-      });
-      return;
+    if (stepNumber < initLength - 1) {
+      changeAllHistory(history);
     }
-    this.setState({
-      history: history.concat([
-        {
-          squares,
-          type: squares[i],
-          pos: i
-        }
-      ]),
-      stepNumber: history.length,
-      xIsNext: !xIsNext,
-      wasWin: null,
-      moveChoose: -1
-    });
+    addCheck(squares, squares[i], i);
+    changeStepNumber(history.length);
+    chooseMove(-1);
+    if (checkWin) {
+      addWin(checkWin);
+      addWasWin(checkWin);
+    } else {
+      addWasWin(null);
+      toggleXIsNext();
+    }
   }
 
   jumpTo(step) {
-    const { wasWin, history } = this.state;
-    this.setState({
-      stepNumber: step,
-      xIsNext: step % 2 === 0,
-      winner: wasWin && step === history.length - 1 ? wasWin : null,
-      moveChoose: step
-    });
+    const {
+      wasWin,
+      history,
+      changeStepNumber,
+      setXIsNext,
+      addWin,
+      chooseMove
+    } = this.props;
+    addWin(wasWin && step === history.length - 1 ? wasWin : null);
+    changeStepNumber(step);
+    setXIsNext(step % 2 === 0);
+    addWin(wasWin && step === history.length - 1 ? wasWin : null);
+    chooseMove(step);
   }
 
   calculateWinner(squares, lastNode) {
@@ -295,7 +284,7 @@ class Game extends React.Component {
       xIsNext,
       moveChoose,
       sortMovesAsc
-    } = this.state;
+    } = this.props;
     const current = history[stepNumber];
     let status;
     if (winner) {
